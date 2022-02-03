@@ -19,13 +19,23 @@ import { Address } from "../components";
   />
 */
 
-export default function Events({ contracts, contractName, eventName, localProvider, mainnetProvider, startBlock }) {
+export default function Events({
+  title,
+  contracts,
+  contractName,
+  eventName,
+  localProvider,
+  mainnetProvider,
+  startBlock,
+}) {
   // 📟 Listen for broadcast events
   const events = useEventListener(contracts, contractName, eventName, localProvider, startBlock);
 
+  console.log({ events });
+
   return (
     <div style={{ width: 600, margin: "auto", marginTop: 32, paddingBottom: 32 }}>
-      <h2>Events:</h2>
+      <h2>{title}</h2>
       <List
         bordered
         dataSource={events}
@@ -33,7 +43,8 @@ export default function Events({ contracts, contractName, eventName, localProvid
           return (
             <List.Item key={item.blockNumber + "_" + item.args.sender + "_" + item.args.purpose}>
               <Address address={item.args[0]} ensProvider={mainnetProvider} fontSize={16} />
-              {item.args[1]}
+              {/*item.args[1]*/}
+              {item.event}
             </List.Item>
           );
         }}

@@ -1,4 +1,4 @@
-import { Button, Col, Menu, Row } from "antd";
+import { Button, Col, Menu, Row, List } from "antd";
 import "antd/dist/antd.css";
 import {
   useBalance,
@@ -9,12 +9,14 @@ import {
   useUserProviderAndSigner,
 } from "eth-hooks";
 import { useExchangeEthPrice } from "eth-hooks/dapps/dex";
+import { useEventListener } from "eth-hooks/events/useEventListener";
 import React, { useCallback, useEffect, useState } from "react";
 import { Link, Route, Switch, useLocation } from "react-router-dom";
 import "./App.css";
 import {
   Account,
   Contract,
+  Address,
   Faucet,
   GasGauge,
   Header,
@@ -30,6 +32,7 @@ import externalContracts from "./contracts/external_contracts";
 import deployedContracts from "./contracts/hardhat_contracts.json";
 import { Transactor, Web3ModalSetup } from "./helpers";
 import { Home, ExampleUI, Hints, Subgraph } from "./views";
+import { Events } from "./components";
 import { useStaticJsonRPC } from "./hooks";
 
 const { ethers } = require("ethers");
@@ -244,6 +247,21 @@ function App(props) {
 
   const faucetAvailable = localProvider && localProvider.connection && targetNetwork.name.indexOf("local") !== -1;
 
+  // 📟 Listen for broadcast events
+  const TheDAOEvents = {
+    TokensBought: useEventListener(readContracts, "TheDAO", "TokensBought", mainnetProvider, 1),
+    TokensTransfered: useEventListener(readContracts, "TheDAO", "TokensTransfered", mainnetProvider, 1),
+    InsufficientFunds: useEventListener(readContracts, "TheDAO", "InsufficientFunds", mainnetProvider, 1),
+    Withdraw: useEventListener(readContracts, "TheDAO", "Withdraw", mainnetProvider, 1),
+  };
+
+  const DarkDowEvents = {
+    HackExecuted: useEventListener(readContracts, "DarkDAO", "HackExecuted", mainnetProvider, 1),
+  };
+
+  console.log({ TheDAOEvents });
+  console.log({ DarkDowEvents });
+
   return (
     <div className="App">
       {/* ✏️ Edit the header and change the title to your project name */}
@@ -279,24 +297,134 @@ function App(props) {
 
       <Switch>
         <Route exact path="/">
-          {/* pass in any web3 props to this Home component. For example, yourLocalBalance */}
           <Home yourLocalBalance={yourLocalBalance} readContracts={readContracts} />
         </Route>
         <Route exact path="/debug">
-          {/*
-                🎛 this scaffolding is full of commonly used components
-                this <Contract/> component will automatically parse your ABI
-                and give you a form to interact with it locally
-            */}
-
           <Contract
-            name="YourContract"
+            name="TheDAO"
             price={price}
             signer={userSigner}
             provider={localProvider}
             address={address}
             blockExplorer={blockExplorer}
             contractConfig={contractConfig}
+          />
+          <Contract
+            name="DarkDAO"
+            price={price}
+            signer={userSigner}
+            provider={localProvider}
+            address={address}
+            blockExplorer={blockExplorer}
+            contractConfig={contractConfig}
+          />
+          {/*
+          <div style={{ width: 600, margin: "auto", marginTop: 32, paddingBottom: 32 }}>
+            <h2>TheDAO - TokensBought</h2>
+            <List
+              bordered
+              dataSource={TheDAOEvents.TokensBought}
+              renderItem={item => {
+                return (
+                  <List.Item key={item.blockNumber + "_" + item.args.sender + "_" + item.args.purpose}>
+                    <Address address={item.args.recipient} ensProvider={mainnetProvider} fontSize={16} />
+                    {item.args.amount.toString()}
+                  </List.Item>
+                );
+              }}
+            />
+          </div>
+          <div style={{ width: 600, margin: "auto", marginTop: 32, paddingBottom: 32 }}>
+            <h2>TheDAO - TokensTransfered</h2>
+            <List
+              bordered
+              dataSource={TheDAOEvents.TokensTransfered}
+              renderItem={item => {
+                return (
+                  <List.Item key={item.blockNumber + "_" + item.args.sender + "_" + item.args.purpose}>
+                    <Address address={item.args.from} ensProvider={mainnetProvider} fontSize={16} />
+                    <Address address={item.args.to} ensProvider={mainnetProvider} fontSize={16} />
+                    {item.args.amount.toString()}
+                  </List.Item>
+                );
+              }}
+            />
+          </div>
+          <div style={{ width: 600, margin: "auto", marginTop: 32, paddingBottom: 32 }}>
+            <h2>TheDAO - InsufficientFunds</h2>
+            <List
+              bordered
+              dataSource={TheDAOEvents.InsufficientFunds}
+              renderItem={item => {
+                return (
+                  <List.Item key={item.blockNumber + "_" + item.args.sender + "_" + item.args.purpose}>
+                    account: <Address address={item.args.account} ensProvider={mainnetProvider} fontSize={16} />
+                    balance: {item.args.balance.toString()}
+                  </List.Item>
+                );
+              }}
+            />
+          </div>
+          */}
+          <div style={{ width: 600, margin: "auto", marginTop: 32, paddingBottom: 32 }}>
+            <h2>TheDAO - Withdraw</h2>
+            <List
+              bordered
+              dataSource={TheDAOEvents.Withdraw}
+              renderItem={item => {
+                return (
+                  <List.Item key={item.blockNumber + "_" + item.args.sender + "_" + item.args.purpose}>
+                    recipient: <Address address={item.args.recipient} ensProvider={mainnetProvider} fontSize={16} />
+                    amount: {item.args.amount.toString()}
+                  </List.Item>
+                );
+              }}
+            />
+          </div>
+          <Events
+            title="DarkDAO Events"
+            contracts={readContracts}
+            contractName="DarkDAO"
+            eventName="HackExecuted"
+            localProvider={localProvider}
+            mainnetProvider={mainnetProvider}
+            startBlock={1}
+          />
+          <Events
+            title="TheDAO Events"
+            contracts={readContracts}
+            contractName="TheDAO"
+            eventName="PaymentCalled"
+            localProvider={localProvider}
+            mainnetProvider={mainnetProvider}
+            startBlock={1}
+          />
+          <Events
+            title="TheDAO Events"
+            contracts={readContracts}
+            contractName="TheDAO"
+            eventName="TokensBought"
+            localProvider={localProvider}
+            mainnetProvider={mainnetProvider}
+            startBlock={1}
+          />
+          <Events
+            title="TheDAO Events"
+            contracts={readContracts}
+            contractName="TheDAO"
+            eventName="TokensTransfered"
+            localProvider={localProvider}
+            mainnetProvider={mainnetProvider}
+            startBlock={1}
+          />
+          <Events
+            title="TheDAO Events"
+            contracts={readContracts}
+            contractName="TheDAO"
+            eventName="InsufficientFunds"
+            localProvider={localProvider}
+            mainnetProvider={mainnetProvider}
+            startBlock={1}
           />
         </Route>
         <Route path="/hints">
