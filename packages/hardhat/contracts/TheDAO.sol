@@ -1,45 +1,29 @@
-pragma solidity ^0.6.0;
+// SPDX-License-Identifier: MIT
+// https://github.com/maAPPsDEV/reentrancy-attack
+
+pragma solidity 0.7.0;
 
 contract TheDAO {
-    event TokensBought(address recipient, uint amount);
-    event TokensTransfered(address from, address to, uint amount);
-    event InsufficientFunds(address account, uint balance);
-    event Withdraw(address recipient, uint amount);
+  mapping(address => uint256) public balances;
 
-    mapping (address => uint) private balances;
+  function donate(address _to) public payable {
+    balances[_to] += msg.value;
+  }
 
-    constructor () public payable {}
+  function balanceOf(address _who) public view returns (uint256 balance) {
+    return balances[_who];
+  }
 
-    function buyTokens() public payable {
-        balances[msg.sender] += msg.value;
-        emit TokensBought(msg.sender, msg.value);
+  function withdraw(uint256 _amount) public {
+    if (balances[msg.sender] >= _amount) {
+      // (bool result,) = _recipient.call.value(balances[msg.sender])("");
+      (bool result, bytes memory data) = msg.sender.call{value: _amount}("");
+      if (result) {
+        _amount;
+      }
+      balances[msg.sender] -= _amount;
     }
+  }
 
-    function balanceOf(address _account) public view returns (uint balance) {
-        return balances[_account];
-    }
-
-    function transferTokens(address _to, uint _amount) public returns (bool) {
-        if (balances[msg.sender] < _amount)
-            return false;
-
-        balances[_to] = _amount;
-        balances[msg.sender] -= _amount;
-        emit TokensTransfered(msg.sender, _to, _amount);
-        return true;
-    }
-
-    function withdraw(address _recipient) public returns (bool) {
-        if (balances[msg.sender] == 0) {
-            emit InsufficientFunds(msg.sender, balances[msg.sender]);
-            return false;
-        }
-        emit Withdraw(_recipient, balances[msg.sender]);
-        (bool result,) = _recipient.call.value(balances[msg.sender])("");
-        //(bool result,) = msg.sender.call{value: balances[msg.sender]}("");
-        if (result) {
-            balances[msg.sender] = 0;
-            return true;
-        }
-    }
+  fallback() external payable {}
 }

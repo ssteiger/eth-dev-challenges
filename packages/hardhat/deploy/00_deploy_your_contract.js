@@ -29,7 +29,8 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
 
   await deploy("DarkDAO", {
     from: deployer,
-    args: [TheDAO.address],
+    // args: [TheDAO.address],
+    args: [],
     // value: ethers.utils.parseEther("1"),
     log: true,
     waitConfirmations: 1,
@@ -42,8 +43,6 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
   console.log({ deployer });
 
   /*
-    await YourContract.setPurpose("Hello");
-
     To take ownership of yourContract using the ownable library uncomment next line and add the
     address you want to be the owner.
     // await yourContract.transferOwnership(YOUR_ADDRESS_HERE);
