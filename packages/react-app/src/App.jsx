@@ -1,4 +1,4 @@
-import { Button, Col, Menu, Row } from "antd";
+import { Button, Col, Menu, Row, List } from "antd";
 import "antd/dist/antd.css";
 import {
   useBalance,
@@ -9,6 +9,7 @@ import {
   useUserProviderAndSigner,
 } from "eth-hooks";
 import { useExchangeEthPrice } from "eth-hooks/dapps/dex";
+import { useEventListener } from "eth-hooks/events/useEventListener";
 import React, { useCallback, useEffect, useState } from "react";
 import { Link, Route, Switch, useLocation } from "react-router-dom";
 import "./App.css";
@@ -30,6 +31,7 @@ import externalContracts from "./contracts/external_contracts";
 import deployedContracts from "./contracts/hardhat_contracts.json";
 import { Transactor, Web3ModalSetup } from "./helpers";
 import { Home, ExampleUI, Hints, Subgraph } from "./views";
+import { Events } from "./components";
 import { useStaticJsonRPC } from "./hooks";
 
 const { ethers } = require("ethers");
@@ -244,6 +246,9 @@ function App(props) {
 
   const faucetAvailable = localProvider && localProvider.connection && targetNetwork.name.indexOf("local") !== -1;
 
+  // 📟 Listen for broadcast events
+  const betExecutedEvents = useEventListener(readContracts, "DiceGame", "BetExecuted", mainnetProvider, 1);
+
   return (
     <div className="App">
       {/* ✏️ Edit the header and change the title to your project name */}
@@ -284,10 +289,10 @@ function App(props) {
         </Route>
         <Route exact path="/debug">
           {/*
-                🎛 this scaffolding is full of commonly used components
-                this <Contract/> component will automatically parse your ABI
-                and give you a form to interact with it locally
-            */}
+              🎛 this scaffolding is full of commonly used components
+              this <Contract/> component will automatically parse your ABI
+              and give you a form to interact with it locally
+          */}
 
           <Contract
             name="DiceGame"
@@ -297,6 +302,22 @@ function App(props) {
             address={address}
             blockExplorer={blockExplorer}
             contractConfig={contractConfig}
+          />
+          <h2>Contract Events:</h2>
+          <List
+            bordered
+            style={{ width: "70vw", margin: "auto" }}
+            dataSource={betExecutedEvents}
+            renderItem={(item, index) => {
+              return (
+                <List.Item key={item.blockNumber + "_" + item.args.sender + "_" + item.args.purpose}>
+                  <span style={{ marginLeft: 5, marginRight: 5 }}>#{index}</span>
+                  <span style={{ marginLeft: 5, marginRight: 5 }}>guess: {item.args._guess.toString()}</span>
+                  <span style={{ marginLeft: 5, marginRight: 5 }}>roll: {item.args._roll.toString()}</span>
+                  <span style={{ marginLeft: 5, marginRight: 5 }}>won: {item.args._won.toString()}</span>
+                </List.Item>
+              );
+            }}
           />
         </Route>
         <Route path="/hints">
