@@ -303,7 +303,7 @@ function App(props) {
             blockExplorer={blockExplorer}
             contractConfig={contractConfig}
           />
-          <h2>Contract Events:</h2>
+          <h2>Contract Events - BetExecuted:</h2>
           <List
             bordered
             style={{ width: "70vw", margin: "auto" }}
